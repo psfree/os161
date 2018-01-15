@@ -118,6 +118,38 @@ common_prog(int nargs, char **args)
  */
 static
 int
+cmd_dbflags(int nargs, char **args)
+{
+	if (nargs < 2) {
+		kprintf("Usage: p program [arguments]\n");
+		return EINVAL;
+	}
+
+	/* drop the leading "p" */
+	int flag = atoi(args[1]);
+	if((flag==0)||(flag>12)||(flag<1))
+		return EINVAL;
+	flag--;
+	if(strcmp(args[2],"on")==0){
+		dbflags^=1<<flag;
+	}
+	else if(strcmp(args[2],"off")==0){
+		dbflags&=~(1<<flag);
+	}
+	else {
+		return EINVAL;
+	}
+	
+
+	return 0;
+}
+
+
+/*
+ * Command for running an arbitrary userlevel program.
+ */
+static
+int
 cmd_prog(int nargs, char **args)
 {
 	if (nargs < 2) {
@@ -376,9 +408,40 @@ showmenu(const char *name, const char *x[])
 	kprintf("\n");
 }
 
+/*
+ * Command for changing debug flags.
+ */
+ 
+ static const char *dbflagsmenu[] = {
+	"[df 1 on/off]        DB_LOCORE      ",
+	"[df 2 on/off]        DB_SYSCALL     ",
+	"[df 3 on/off]        DB_INTERRRUPT  ",
+	"[df 4 on/off]        DB_DEVICE      ",
+	"[df 5 on/off]        DB_THREADS     ",
+	"[df 6 on/off]        DB_VM          ",
+	"[df 7 on/off]        DB_EXEC        ",
+	"[df 8 on/off]        DB_VFS         ",
+	"[df 9 on/off]        DB_SFS         ",
+	"[df 10 on/off]       DB_NET         ",
+	"[df 11 on/off]       DB_NETFS       ",
+	"[df 12 on/off]       DB_KMALLOC     ",
+	NULL
+};
+
+static
+int
+cmd_dbflagsmenu(int nargs, char **args)
+{
+	
+	showmenu("OS/161 Debug flags", dbflagsmenu);
+	kprintf("Current value of dbflags is 0x%x\n", dbflags);
+	return 0;
+}
+
 static const char *opsmenu[] = {
 	"[s]       Shell                     ",
 	"[p]       Other program             ",
+	"[dbflags] Debug flags               ",
 	"[mount]   Mount a filesystem        ",
 	"[unmount] Unmount a filesystem      ",
 	"[bootfs]  Set \"boot\" filesystem     ",
@@ -484,6 +547,8 @@ static struct {
 	/* operations */
 	{ "s",		cmd_shell },
 	{ "p",		cmd_prog },
+	{ "dbflags", cmd_dbflagsmenu },
+	{ "df",    cmd_dbflags },
 	{ "mount",	cmd_mount },
 	{ "unmount",	cmd_unmount },
 	{ "bootfs",	cmd_bootfs },

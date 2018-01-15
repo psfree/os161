@@ -116,6 +116,9 @@ lock_create(const char *name)
 	
 	// add stuff here as needed
 	
+	lock->locked = 0;
+	lock->owner = NULL;
+	
 	return lock;
 }
 
@@ -134,26 +137,40 @@ void
 lock_acquire(struct lock *lock)
 {
 	// Write this
-
-	(void)lock;  // suppress warning until code gets written
+	if(lock==NULL)
+		return 0;
+	int spl;
+	spl = splhigh();
+	while(lock->locked==1) { // if already locked
+		thread_yield();
+	}
+	lock->locked=1;
+	lock->owner = curthread;
+	splx(spl);
 }
 
 void
 lock_release(struct lock *lock)
 {
-	// Write this
-
-	(void)lock;  // suppress warning until code gets written
+	if(lock==NULL)
+		return 0;
+	int spl = splhigh();
+	if((lock_do_i_hold(lock))&&(lock->locked==1)){
+		lock->owner = NULL;
+		lock->locked = 0;
+	}
+	splx(spl);
 }
 
 int
 lock_do_i_hold(struct lock *lock)
 {
-	// Write this
-
-	(void)lock;  // suppress warning until code gets written
-
-	return 1;    // dummy until code gets written
+	int ret = 0;
+	int spl = splhigh();
+	if(lock->owner==curthread)
+		ret = 1;
+	splx(spl);
+	return ret;
 }
 
 ////////////////////////////////////////////////////////////
